@@ -1,0 +1,158 @@
+{
+  "name": "todo",
+  "displayName": "todo",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.59.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:todo.add",
+    "onView:todo"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "todo-explorer",
+          "title": "Todo",
+          "icon": "media/light/list.svg"
+        }
+      ]
+    },
+    "views": {
+      "todo-explorer": [
+        {
+          "id": "todo",
+          "name": "Items",
+          "icon": "media/dep.svg",
+          "contextualTitle": "Todo List"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [{
+        "command": "todo.add",
+        "when": "view == todo",
+        "group": "navigation"
+      },
+      {
+        "command": "todo.create-dir",
+        "when": "view == todo",
+        "group": "navigation"
+      },
+      {
+        "command": "todo.remove-done",
+        "when": "view == todo",
+        "group": "navigation"
+      }],
+      "view/item/context": [{
+        "command": "todo.check",
+        "when": "view == todo && viewItem == unchecked",
+        "group": "inline"
+      },
+      {
+        "command": "todo.uncheck",
+        "when": "view == todo && viewItem == checked",
+        "group": "inline"
+      },
+      {
+        "command": "todo.dir.add",
+        "when": "view == todo && viewItem == todo-dir",
+        "group": "inline"
+      },
+      {
+        "command": "todo.dir.create-dir",
+        "when": "view == todo && viewItem == todo-dir",
+        "group": "inline"
+      }]
+    },
+    "commands": [{
+        "command": "todo.dir.add",
+        "title": "Add todo in this section",
+        "icon": {
+          "light": "media/light/add.svg",
+          "dark": "media/dark/add.svg"
+        }
+      },
+      {
+        "command": "todo.dir.create-dir",
+        "title": "Create a subsection",
+        "icon": {
+          "light": "media/light/create_dir.svg",
+          "dark": "media/dark/create_dir.svg"
+        }
+      },
+      {
+        "command": "todo.add",
+        "title": "Add a todo",
+        "icon": {
+          "light": "media/light/add.svg",
+          "dark": "media/dark/add.svg"
+        }
+      },
+      {
+        "command": "todo.create-dir",
+        "title": "Create new section",
+        "icon": {
+          "light": "media/light/create_dir.svg",
+          "dark": "media/dark/create_dir.svg"
+        }
+      },
+      {
+        "command": "todo.remove-done",
+        "title": " Clean up all finished tasks",
+        "icon": {
+          "light": "media/light/remove_done.svg",
+          "dark": "media/dark/remove_done.svg"
+        }
+      },
+      {
+        "command": "todo.check",
+        "title": "Check todo",
+        "icon": {
+          "light": "media/light/box_empty.svg",
+          "dark": "media/dark/box_empty.svg"
+        }
+      },
+      {
+        "command": "todo.uncheck",
+        "title": "Uncheck todo",
+        "icon": {
+          "light": "media/light/box_checked.svg",
+          "dark": "media/dark/box_checked.svg"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "14.x",
+    "@types/uuid": "^8.3.1",
+    "@types/vscode": "^1.59.0",
+    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/parser": "^4.26.0",
+    "eslint": "^7.27.0",
+    "glob": "^7.1.7",
+    "mocha": "^8.4.0",
+    "typescript": "^4.3.2",
+    "vscode-test": "^1.5.2"
+  },
+  "dependencies": {
+    "ts-pattern": "^3.2.4",
+    "uuid": "^8.3.2"
+  }
+}
