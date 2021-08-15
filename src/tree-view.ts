@@ -1,10 +1,6 @@
 import { match, __ } from "ts-pattern";
 import * as vscode from "vscode";
-
-export type TODOData =
-  | undefined
-  | { label: string; uuid: string; checked: boolean }
-  | { name: string; id: string; content: TODOData[] };
+import { mapDataToTreeItem, mapToParent, TODOData } from "./util-functions";
 
 export class TODO extends vscode.TreeItem {
   constructor(
@@ -75,48 +71,3 @@ export class TreeView implements vscode.TreeDataProvider<TODO> {
     return mapDataToTreeItem(todoData);
   }
 }
-
-type MapDataToTreeItem = (todoData: TODOData[]) => TODO[];
-const mapDataToTreeItem: MapDataToTreeItem = (todoData: TODOData[]) =>
-  todoData.map((entry: TODOData) =>
-    match(entry)
-      .with(undefined, () => new TODO("...", "", false, vscode.TreeItemCollapsibleState.None))
-      .with(
-        { label: __.string, uuid: __.string, checked: true },
-        (elem) => new TODO(strikeThrough(elem.label), elem.uuid, elem.checked, vscode.TreeItemCollapsibleState.None)
-      )
-      .with(
-        { label: __.string, uuid: __.string, checked: __.boolean },
-        (elem) => new TODO(elem.label, elem.uuid, elem.checked, vscode.TreeItemCollapsibleState.None)
-      )
-      .with(
-        { name: __.string, id: __.string, content: __ },
-        (elem) => new TODO(elem.name, elem.id, false, vscode.TreeItemCollapsibleState.Collapsed)
-      )
-      .exhaustive()
-  );
-
-type MapToParent = (entry: TODOData) => (id: string | undefined) => TODOData;
-const mapToParent: MapToParent = (entry: TODOData) => (id: string | undefined) =>
-  id
-    ? match(entry)
-        .with(undefined, () => undefined)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => undefined)
-        .with({ name: __.string, id: __.string, content: [] }, () => undefined)
-        .with({ name: __.string, id: __.string, content: __ }, (elem) =>
-          elem.id === id
-            ? elem
-            : elem.content
-                .map((elem: TODOData) => mapToParent(elem)(id))
-                .reduce((prev: TODOData, current: TODOData) => prev || current)
-        )
-        .exhaustive()
-    : // False in case no id was defined
-      undefined;
-
-type StrikeThrough = (text: string) => string;
-const strikeThrough: StrikeThrough = (text: string) =>
-  text
-    .split("")
-    .map((char) => char + "\u0336")
-    .join("");

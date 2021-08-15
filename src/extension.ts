@@ -1,8 +1,18 @@
 import * as vscode from "vscode";
-import { v4 as uuidv4 } from "uuid";
-import { window, commands } from "vscode";
-import { TreeView, TODO, TODOData } from "./tree-view";
-import { match, __ } from "ts-pattern";
+import { commands } from "vscode";
+import { TreeView, TODO } from "./tree-view";
+import {
+  TODOData,
+  add,
+  addBase,
+  check,
+  createElem,
+  createLink,
+  edit,
+  inputBox,
+  remove,
+  removeDone,
+} from "./util-functions";
 
 // this method is called when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
@@ -11,17 +21,19 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register todo view
   vscode.window.registerTreeDataProvider("todo", treeView);
-  // Register commands for checking
+  // Register commands
   context.subscriptions.push(
     commands.registerCommand(
       "todo.check",
       async (todo: TODO) => todo.id && updateGlobalState(context, treeView, check(todo.id))
     )
   );
+  // TODO: Make edit either change the label or link but not replace the element causing links to be deleted.
   context.subscriptions.push(
     commands.registerCommand(
       "todo.edit",
-      async (todo: TODO) => todo.id && showInputBox(context, treeView, inputBox, createElem(false), edit, todo)
+      async (todo: TODO) =>
+        todo.id && showInputBox(context, treeView, inputBox("New text"), createElem(false), edit, todo)
     )
   );
   context.subscriptions.push(
@@ -32,12 +44,30 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     commands.registerCommand("todo.dir.add", async (todo: TODO) =>
-      showInputBox(context, treeView, inputBox, createElem(false), add, todo)
+      showInputBox(context, treeView, inputBox("My todo"), createElem(false), add, todo)
     )
   );
   context.subscriptions.push(
     commands.registerCommand("todo.dir.create-dir", async (todo: TODO) =>
-      showInputBox(context, treeView, inputBox, createElem(true), add, todo)
+      showInputBox(context, treeView, inputBox("My section"), createElem(true), add, todo)
+    )
+  );
+  context.subscriptions.push(
+    commands.registerCommand("todo.dir.add.link", async (todo: TODO) =>
+      inputBox("https://mylink.com")().then((url: string | undefined) =>
+        url
+          ? showInputBox(context, treeView, inputBox("Link name"), createLink(url), add, todo)
+          : console.error("Error selecting link")
+      )
+    )
+  );
+  context.subscriptions.push(
+    commands.registerCommand("todo.add.link", async (todo: TODO) =>
+      inputBox("https://mylink.com")().then((url: string | undefined) =>
+        url
+          ? showInputBox(context, treeView, inputBox("Link name"), createLink(url), addBase, todo)
+          : console.error("Error selecting link")
+      )
     )
   );
   context.subscriptions.push(
@@ -48,16 +78,23 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     commands.registerCommand("todo.add", async () =>
-      showInputBox(context, treeView, inputBox, createElem(false), addBase)
+      showInputBox(context, treeView, inputBox("My Todo"), createElem(false), addBase)
     )
   );
   context.subscriptions.push(
     commands.registerCommand("todo.create-dir", async () =>
-      showInputBox(context, treeView, inputBox, createElem(true), addBase)
+      showInputBox(context, treeView, inputBox("My dir"), createElem(true), addBase)
     )
   );
   context.subscriptions.push(
     commands.registerCommand("todo.remove-done", async () => updateGlobalState(context, treeView, removeDone))
+  );
+  context.subscriptions.push(
+    commands.registerCommand("todo.open.link", async (url: string) =>
+      url.startsWith("/")
+        ? vscode.window.showTextDocument(vscode.Uri.parse(url))
+        : vscode.env.openExternal(vscode.Uri.parse(url))
+    )
   );
 }
 
@@ -78,7 +115,7 @@ async function updateGlobalState(context: vscode.ExtensionContext, view: TreeVie
 }
 
 /**
- * Function that takes a data store reference, ui component and modify function to modify the datastore
+ * Function that takes a data store reference, ui component and modify function to modify the datastore accordingly
  * @param context Extension context
  * @param treeView View of the tree tab
  * @param uiElem UI component for changing Data
@@ -103,118 +140,4 @@ const showInputBox = async (
           param ? modFunction(param.id)(createElem(inputText)) : modFunction(createElem(inputText))
         )
       : console.error("Invalid transaction")
-  );
-
-type Remove = (id: string) => (dataStore: TODOData[]) => TODOData[];
-const remove: Remove = (id) => (dataStore) =>
-  dataStore
-    .filter((todoData: TODOData) =>
-      match(todoData)
-        .with(undefined, () => true)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => true)
-        .with({ name: __.string, id: id, content: __ }, () => false)
-        .with({ name: __.string, id: __.string, content: __ }, () => true)
-        .exhaustive()
-    )
-    .map((elem: TODOData) =>
-      match(elem)
-        .with(undefined, () => elem)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => elem)
-        .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-          name: subDir.name,
-          id: subDir.id,
-          content: remove(id)(subDir.content),
-        }))
-        .exhaustive()
-    );
-
-type InputBox = () => Promise<string | undefined>;
-const inputBox: InputBox = async () =>
-  await window.showInputBox({
-    placeHolder: "For example: Install GNOME!",
-  });
-
-type CreateElem = (isDirectory: boolean) => (name: string) => TODOData;
-const createElem: CreateElem = (isDirectory) =>
-  isDirectory
-    ? (name: string) => ({ name: name, id: uuidv4(), content: [] })
-    : (name: string) => ({ label: name, uuid: uuidv4(), checked: false });
-
-type Check = (id: string) => (dataStore: TODOData[]) => TODOData[];
-const check: Check = (id) => (dataStore) =>
-  dataStore.map((todoData: TODOData) =>
-    match(todoData)
-      .with(undefined, () => todoData)
-      .with({ label: __.string, uuid: id, checked: __.boolean }, (elem) => ({
-        label: elem.label,
-        uuid: elem.uuid,
-        checked: !elem.checked,
-      }))
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
-      .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-        name: subDir.name,
-        id: subDir.id,
-        content: check(id)(subDir.content),
-      }))
-      .exhaustive()
-  );
-
-type Add = (dirId: string) => (elem: TODOData) => (dataStore: TODOData[]) => TODOData[];
-const add: Add = (id) => (elem) => (dataStore) =>
-  dataStore.map((todoData: TODOData) =>
-    match(todoData)
-      .with(undefined, () => todoData)
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
-      .with({ name: __.string, id: id, content: __ }, (subDir) => ({
-        name: subDir.name,
-        id: subDir.id,
-        content: subDir.content.concat(elem),
-      }))
-      .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-        name: subDir.name,
-        id: subDir.id,
-        content: add(id)(elem)(subDir.content),
-      }))
-      .exhaustive()
-  );
-
-type AddBase = (elem: TODOData) => (dataStore: TODOData[]) => TODOData[];
-const addBase: AddBase = (elem) => (dataStore) => dataStore.concat(elem);
-
-type RemoveDone = (dataStore: TODOData[]) => TODOData[];
-const removeDone: RemoveDone = (dataStore) =>
-  dataStore
-    .filter((todoData: TODOData) =>
-      match(todoData)
-        .with(undefined, () => true)
-        .with({ label: __.string, uuid: __.string, checked: true }, () => false)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => true)
-        .with({ name: __.string, id: __.string, content: __ }, () => true)
-        .exhaustive()
-    )
-    .map((elem: TODOData) =>
-      match(elem)
-        .with(undefined, () => elem)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => elem)
-        .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-          name: subDir.name,
-          id: subDir.id,
-          content: removeDone(subDir.content),
-        }))
-        .exhaustive()
-    );
-
-type Edit = (id: string) => (elem: TODOData) => (dataStore: TODOData[]) => TODOData[];
-const edit: Edit = (id) => (elem) => (dataStore) =>
-  dataStore.map((todoData: TODOData) =>
-    match(todoData)
-      .with(undefined, () => todoData)
-      .with({ label: __.string, uuid: id, checked: __.boolean }, () => elem)
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
-      .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-        name: subDir.name,
-        id: subDir.id,
-        content: edit(id)(elem)(subDir.content),
-      }))
-      .exhaustive()
   );

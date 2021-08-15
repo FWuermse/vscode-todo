@@ -42,6 +42,11 @@
           "group": "navigation"
         },
         {
+          "command": "todo.add.link",
+          "when": "view == todo",
+          "group": "navigation"
+        },
+        {
           "command": "todo.create-dir",
           "when": "view == todo",
           "group": "navigation"
@@ -74,6 +79,11 @@
           "group": "inline"
         },
         {
+          "command": "todo.dir.add.link",
+          "when": "view == todo && viewItem == todo-dir",
+          "group": "inline"
+        },
+        {
           "command": "todo.dir.create-dir",
           "when": "view == todo && viewItem == todo-dir",
           "group": "inline"
@@ -88,10 +98,22 @@
     "commands": [
       {
         "command": "todo.dir.add",
-        "title": "Add todo in this section",
+        "title": "Add todo to this section",
         "icon": {
           "light": "media/light/add.svg",
           "dark": "media/dark/add.svg"
+        }
+      },
+      {
+        "command": "todo.open.link",
+        "title": "Open link"
+      },
+      {
+        "command": "todo.dir.add.link",
+        "title": "Add link to this section",
+        "icon": {
+          "light": "media/light/add_link.svg",
+          "dark": "media/dark/add_link.svg"
         }
       },
       {
@@ -108,6 +130,14 @@
         "icon": {
           "light": "media/light/add.svg",
           "dark": "media/dark/add.svg"
+        }
+      },
+      {
+        "command": "todo.add.link",
+        "title": "Add link",
+        "icon": {
+          "light": "media/light/add_link.svg",
+          "dark": "media/dark/add_link.svg"
         }
       },
       {

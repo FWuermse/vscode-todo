@@ -1,5 +1,4 @@
 {
-  "extends": ["tslint:recommended", "tslint-eslint-rules"],
   "rules": {
     "max-line-length": [true, 120]
   },
