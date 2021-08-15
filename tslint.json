@@ -1,0 +1,16 @@
+{
+  "extends": ["tslint:recommended", "tslint-eslint-rules"],
+  "rules": {
+    "max-line-length": [true, 120]
+  },
+  "rulesDirectory": [],
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": ["ES2019"],
+    "outDir": "out",
+    "sourceMap": true,
+    "rootDir": "src"
+  },
+  "exclude": ["node_modules", ".vscode-test"]
+}
