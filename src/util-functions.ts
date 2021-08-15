@@ -14,8 +14,6 @@ type Add = (dirId: string) => (elem: TODOData) => (dataStore: TODOData[]) => TOD
 const add: Add = (id) => (elem) => (dataStore) =>
   dataStore.map((todoData: TODOData) =>
     match(todoData)
-      .with(undefined, () => todoData)
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
       .with({ name: __.string, id: id, content: __ }, (subDir) => ({
         name: subDir.name,
         id: subDir.id,
@@ -26,6 +24,7 @@ const add: Add = (id) => (elem) => (dataStore) =>
         id: subDir.id,
         content: add(id)(elem)(subDir.content),
       }))
+      .with(__, (x) => x)
       .exhaustive()
   );
 
@@ -36,18 +35,17 @@ type Check = (id: string) => (dataStore: TODOData[]) => TODOData[];
 const check: Check = (id) => (dataStore) =>
   dataStore.map((todoData: TODOData) =>
     match(todoData)
-      .with(undefined, () => todoData)
       .with({ label: __.string, uuid: id, checked: __.boolean }, (elem) => ({
         label: elem.label,
         uuid: elem.uuid,
         checked: !elem.checked,
       }))
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
       .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
         name: subDir.name,
         id: subDir.id,
         content: check(id)(subDir.content),
       }))
+      .with(__, (x) => x)
       .exhaustive()
   );
 
@@ -64,14 +62,13 @@ type Edit = (id: string) => (elem: TODOData) => (dataStore: TODOData[]) => TODOD
 const edit: Edit = (id) => (elem) => (dataStore) =>
   dataStore.map((todoData: TODOData) =>
     match(todoData)
-      .with(undefined, () => todoData)
       .with({ label: __.string, uuid: id, checked: __.boolean }, () => elem)
-      .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => todoData)
       .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
         name: subDir.name,
         id: subDir.id,
         content: edit(id)(elem)(subDir.content),
       }))
+      .with(__, (x) => x)
       .exhaustive()
   );
 
@@ -85,7 +82,7 @@ type MapDataToTreeItem = (todoData: TODOData[]) => TODO[];
 const mapDataToTreeItem: MapDataToTreeItem = (todoData: TODOData[]) =>
   todoData.map((entry: TODOData) =>
     match(entry)
-      .with(undefined, () => new TODO("...", "", false, vscode.TreeItemCollapsibleState.None))
+      .with(undefined, (x) => new TODO("...", "", false, vscode.TreeItemCollapsibleState.None))
       .with(
         { label: __.string, uuid: __.string, checked: true },
         (elem) => new TODO(strikeThrough(elem.label), elem.uuid, elem.checked, vscode.TreeItemCollapsibleState.None)
@@ -114,8 +111,6 @@ type MapToParent = (entry: TODOData) => (id: string | undefined) => TODOData;
 const mapToParent: MapToParent = (entry: TODOData) => (id: string | undefined) =>
   id
     ? match(entry)
-        .with(undefined, () => undefined)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => undefined)
         .with({ name: __.string, id: __.string, content: [] }, () => undefined)
         .with({ name: __.string, id: __.string, content: __ }, (elem) =>
           elem.id === id
@@ -124,6 +119,7 @@ const mapToParent: MapToParent = (entry: TODOData) => (id: string | undefined) =
                 .map((elem: TODOData) => mapToParent(elem)(id))
                 .reduce((prev: TODOData, current: TODOData) => prev || current)
         )
+        .with(__, () => undefined)
         .exhaustive()
     : // False in case no id was defined
       undefined;
@@ -133,21 +129,18 @@ const remove: Remove = (id) => (dataStore) =>
   dataStore
     .filter((todoData: TODOData) =>
       match(todoData)
-        .with(undefined, () => true)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => true)
         .with({ name: __.string, id: id, content: __ }, () => false)
-        .with({ name: __.string, id: __.string, content: __ }, () => true)
+        .with(__, () => true)
         .exhaustive()
     )
     .map((elem: TODOData) =>
       match(elem)
-        .with(undefined, () => elem)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => elem)
         .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
           name: subDir.name,
           id: subDir.id,
           content: remove(id)(subDir.content),
         }))
+        .with(__, (x) => x)
         .exhaustive()
     );
 
@@ -156,21 +149,18 @@ const removeDone: RemoveDone = (dataStore) =>
   dataStore
     .filter((todoData: TODOData) =>
       match(todoData)
-        .with(undefined, () => true)
         .with({ label: __.string, uuid: __.string, checked: true }, () => false)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => true)
-        .with({ name: __.string, id: __.string, content: __ }, () => true)
+        .with(__, () => true)
         .exhaustive()
     )
     .map((elem: TODOData) =>
       match(elem)
-        .with(undefined, () => elem)
-        .with({ label: __.string, uuid: __.string, checked: __.boolean }, () => elem)
         .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
           name: subDir.name,
           id: subDir.id,
           content: removeDone(subDir.content),
         }))
+        .with(__, (x) => x)
         .exhaustive()
     );
 
