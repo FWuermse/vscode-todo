@@ -35,6 +35,12 @@ type Check = (id: string) => (dataStore: TODOData[]) => TODOData[];
 const check: Check = (id) => (dataStore) =>
   dataStore.map((todoData: TODOData) =>
     match(todoData)
+      .with({ label: __.string, uuid: id, url: __.string, checked: __.boolean }, (link) => ({
+        label: link.label,
+        uuid: link.uuid,
+        url: link.url,
+        checked: !link.checked,
+      }))
       .with({ label: __.string, uuid: id, checked: __.boolean }, (elem) => ({
         label: elem.label,
         uuid: elem.uuid,
@@ -57,20 +63,6 @@ const createElem: CreateElem = (isDirectory) =>
 
 type CreateLink = (url: string) => (name: string) => TODOData;
 const createLink: CreateLink = (url) => (name) => ({ label: name, uuid: uuidv4(), url: url, checked: false });
-
-type Edit = (id: string) => (elem: TODOData) => (dataStore: TODOData[]) => TODOData[];
-const edit: Edit = (id) => (elem) => (dataStore) =>
-  dataStore.map((todoData: TODOData) =>
-    match(todoData)
-      .with({ label: __.string, uuid: id, checked: __.boolean }, () => elem)
-      .with({ name: __.string, id: __.string, content: __ }, (subDir) => ({
-        name: subDir.name,
-        id: subDir.id,
-        content: edit(id)(elem)(subDir.content),
-      }))
-      .with(__, (x) => x)
-      .exhaustive()
-  );
 
 type InputBox = (suggestion: string) => () => Promise<string | undefined>;
 const inputBox: InputBox = (suggestion) => async () =>
@@ -130,6 +122,8 @@ const remove: Remove = (id) => (dataStore) =>
     .filter((todoData: TODOData) =>
       match(todoData)
         .with({ name: __.string, id: id, content: __ }, () => false)
+        .with({ label: __.string, uuid: id, checked: __.boolean }, () => false)
+        .with({ label: __.string, uuid: id, url: __.string, checked: __.boolean }, () => false)
         .with(__, () => true)
         .exhaustive()
     )
@@ -178,7 +172,6 @@ export {
   check,
   createElem,
   createLink,
-  edit,
   inputBox,
   mapDataToTreeItem,
   mapToParent,

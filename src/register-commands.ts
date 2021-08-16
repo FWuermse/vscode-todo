@@ -2,21 +2,13 @@ import * as vscode from "vscode";
 import { commands } from "vscode";
 import { showInputBox, updateGlobalState } from "./extension";
 import { TODO, TreeView } from "./tree-view";
-import { add, addBase, check, createElem, createLink, edit, inputBox, remove, removeDone } from "./util-functions";
+import { add, addBase, check, createElem, createLink, inputBox, remove, removeDone } from "./util-functions";
 
 export const register = (context: vscode.ExtensionContext, treeView: TreeView) => {
   context.subscriptions.push(
     commands.registerCommand(
       "todo.check",
       async (todo: TODO) => todo.id && updateGlobalState(context, treeView, check(todo.id))
-    )
-  );
-  // TODO: Make edit either change the label or link but not replace the element causing links to be deleted.
-  context.subscriptions.push(
-    commands.registerCommand(
-      "todo.edit",
-      async (todo: TODO) =>
-        todo.id && showInputBox(context, treeView, inputBox("New text"), createElem(false), edit, todo)
     )
   );
   context.subscriptions.push(
@@ -61,12 +53,12 @@ export const register = (context: vscode.ExtensionContext, treeView: TreeView) =
   );
   context.subscriptions.push(
     commands.registerCommand("todo.add", async () =>
-      showInputBox(context, treeView, inputBox("My Todo"), createElem(false), addBase)
+      showInputBox(context, treeView, inputBox("My todo"), createElem(false), addBase)
     )
   );
   context.subscriptions.push(
     commands.registerCommand("todo.create-dir", async () =>
-      showInputBox(context, treeView, inputBox("My dir"), createElem(true), addBase)
+      showInputBox(context, treeView, inputBox("My section"), createElem(true), addBase)
     )
   );
   context.subscriptions.push(

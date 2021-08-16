@@ -64,11 +64,6 @@
           "group": "inline"
         },
         {
-          "command": "todo.edit",
-          "when": "view == todo && viewItem != todo-dir",
-          "group": "inline"
-        },
-        {
           "command": "todo.uncheck",
           "when": "view == todo && viewItem == checked",
           "group": "inline"
@@ -138,14 +133,6 @@
         "icon": {
           "light": "media/light/add_link.svg",
           "dark": "media/dark/add_link.svg"
-        }
-      },
-      {
-        "command": "todo.edit",
-        "title": " Edit this todo",
-        "icon": {
-          "light": "media/light/edit.svg",
-          "dark": "media/dark/edit.svg"
         }
       },
       {

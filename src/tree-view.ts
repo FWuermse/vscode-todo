@@ -1,26 +1,36 @@
+import path = require("path");
 import { match, __ } from "ts-pattern";
 import * as vscode from "vscode";
 import { mapDataToTreeItem, mapToParent, TODOData } from "./util-functions";
 
 export class TODO extends vscode.TreeItem {
   constructor(
-    public readonly label: string,
-    private readonly uuid: string,
-    private readonly checked: boolean,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly command?: vscode.Command
+    readonly label: string,
+    readonly uuid: string,
+    readonly checked: boolean,
+    readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    readonly command?: vscode.Command
   ) {
     super(label, collapsibleState);
-    this.tooltip = `${this.label}`;
+    this.tooltip = this.label;
     this.id = this.uuid;
-  }
 
-  contextValue =
-    this.collapsibleState !== vscode.TreeItemCollapsibleState.None
-      ? "todo-dir"
-      : this.checked
-      ? "checked"
-      : "unchecked";
+    if (this.collapsibleState !== vscode.TreeItemCollapsibleState.None) {
+      this.contextValue = "todo-dir";
+    } else if (this.checked) {
+      this.contextValue = "checked";
+      this.iconPath = {
+        light: path.join(__filename, "..", "..", "media", "light", "done.svg"),
+        dark: path.join(__filename, "..", "..", "media", "dark", "done.svg"),
+      };
+    } else {
+      this.contextValue = "unchecked";
+      this.iconPath = {
+        light: path.join(__filename, "..", "..", "media", "light", command ? "link.svg" : "task.svg"),
+        dark: path.join(__filename, "..", "..", "media", "dark", command ? "link.svg" : "task.svg"),
+      };
+    }
+  }
 }
 
 export class TreeView implements vscode.TreeDataProvider<TODO> {
